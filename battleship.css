@@ -1,17 +1,25 @@
 td{
-  height: 10px;
-  width: 10px;
+  height: 30px;
+  width: 30px;
   border: black solid 1px;
+  background-color: blue;
+}
+
+table{
+  border-collapse: collapse;
+  margin: auto;
 }
 
 .ship {
-  background-color: blue;
+  background-color: black;
 }
+
+
 
 .hit {
   background-color: red;
 }
 
 .miss {
-  background-color: green;
+  background-color: white;
 }
