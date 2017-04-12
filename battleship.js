@@ -83,7 +83,7 @@ function createShips(){
   ships.forEach(function(ship, i){
     ship.cellsOccupied.forEach(function(location){
       gameState.gridState[location[0]][location[1]] = "s";
-      document.getElementById(location[0] + "-" + location[1]).setAttribute("class", "ship");
+      // document.getElementById(location[0] + "-" + location[1]).setAttribute("class", "ship");
     });
     ship.name = shipNames[i];
   });
@@ -99,11 +99,11 @@ function createMyShips(){
   for (var k = 0; k < shipLengths.length; k++){
     randomRow = Math.floor(Math.random() * 10);
     randomColumn = Math.floor(Math.random() * 10);
-    testCase = isPlacementValid([randomRow, randomColumn], shipLengths[k]);
+    testCase = isMyPlacementValid([randomRow, randomColumn], shipLengths[k]);
     while (!testCase.valid){
       randomRow = Math.floor(Math.random() * 10);
       randomColumn = Math.floor(Math.random() * 10);
-      testCase = isPlacementValid([randomRow, randomColumn], shipLengths[k]);
+      testCase = isMyPlacementValid([randomRow, randomColumn], shipLengths[k]);
     }
 
     if (testCase.direction == "north"){
@@ -172,7 +172,6 @@ function isComputerShotValid(aLocation){
 
 function computerShoots(){
   if (!seeker.targetAcquired){
-    console.log("no target");
     var randomRow = Math.floor(Math.random() * 10);
     var randomColumn = Math.floor(Math.random() * 10);
     while (shotAlreadyFired([randomRow, randomColumn])){
@@ -182,17 +181,13 @@ function computerShoots(){
     handleComputerShot([randomRow, randomColumn]);
   }
   else {
-    console.log("target acquired");
     if (seeker.directionAcquired){
       if (seeker.tries > 4){
-        console.log("seeker gave up on acquired direction");
         seeker.tries = 0;
         seeker.directionAcquired = false;
         computerShoots();
       }
       else {
-        console.log("direction acquired");
-        console.log(seeker.directionIndex);
         switch (seeker.directionIndex){
           case 0:
             if (!isComputerShotValid([seeker.lastHit[0] - 1, seeker.lastHit[1]])){
@@ -235,14 +230,11 @@ function computerShoots(){
     }
     else {
       if (seeker.tries > 4){
-        console.log("seeker gave up on acquired target");
         seeker.tries = 0;
         seeker.targetAcquired = false;
         computerShoots();
       }
       else {
-        console.log("NO direction acquired");
-        console.log(seeker.directionIndex);
         switch (seeker.directionIndex){
           case 0:
             if (!isComputerShotValid([seeker.lastHit[0] - 1, seeker.lastHit[1]])){
@@ -303,7 +295,6 @@ function handleComputerShot(cellLocation){
     updateMyShipHealth([cellLocation[0], cellLocation[1]]);
     myGrid.hits++;
     if (seeker.targetAcquired){
-      console.log("second hit, direction acquired");
       seeker.directionAcquired = true;
     }
     else {
@@ -452,6 +443,115 @@ function isPlacementValid(anArray, shipLength){
   }
 }
 
+function isMyPlacementValid(anArray, shipLength){
+  var validDirections = [];
+  var row = anArray[0];
+  var column = anArray[1];
+  var length = shipLength;
+  var locationsToCheck = [];
+
+  var isNorthValid = true;
+  // check north direction
+  // if there's not enough room to the north, set isNorthValid to false
+  if (row < length - 1){
+    isNorthValid = false;
+  }
+  else {
+    // check gameState.gridState to see if we will overlap any ships
+    for (var i = 0; i < length; i++){
+      locationsToCheck.push([row - i, column])
+    }
+    myShips.forEach(function(ship){
+      locationsToCheck.forEach(function(location){
+        if (ship.contains(location)){
+          isNorthValid = false;
+        }
+      });
+    });
+  }
+  locationsToCheck = [];
+
+  var isEastValid = true;
+  // check east direction
+  // if there's not enough room to the east, set isEastValid to false
+  if (column + length > 9){
+    isEastValid = false;
+  }
+  else {
+
+    // check gameState.gridState to see if we will overlap any ships
+    for (var i = 0; i < length; i++){
+      locationsToCheck.push([row, column + i])
+    }
+    myShips.forEach(function(ship){
+      locationsToCheck.forEach(function(location){
+        if (ship.contains(location)){
+          isEastValid = false;
+        }
+      });
+    });
+  }
+  locationsToCheck = [];
+
+  var isSouthValid = true;
+  // check south direction
+  // if there's not enough room to the east, set isSouthValid to false
+  if (row + length > 9){
+    isSouthValid = false;
+  }
+  else {
+    // check gameState.gridState to see if we will overlap any ship
+    for (var i = 0; i < length; i++){
+      locationsToCheck.push([row + i, column])
+    }
+    myShips.forEach(function(ship){
+      locationsToCheck.forEach(function(location){
+        if (ship.contains(location)){
+          isSouthValid = false;
+        };
+      });
+    });
+  }
+  locationsToCheck = [];
+
+  var isWestValid = true;
+  // check west direction
+  // if there's not enough room to the west, set isWestValid to false
+  if (column < length - 1){
+    isWestValid = false;
+  }
+  else {
+    // check gameState.gridState to see if we will overlap any ships
+    for (var i = 0; i < length; i++){
+      locationsToCheck.push([row, column - i])
+    }
+    myShips.forEach(function(ship){
+      locationsToCheck.forEach(function(location){
+        if (ship.contains(location)){
+          isWestValid = false;
+        }
+      });
+    });
+  }
+
+  if (isNorthValid){
+    validDirections.push("north");
+  }
+  if (isEastValid){
+    validDirections.push("east");
+  }
+  if (isSouthValid){
+    validDirections.push("south");
+  }
+  if (isWestValid){
+    validDirections.push("west");
+  }
+  return {
+    valid: isNorthValid || isEastValid || isSouthValid || isWestValid,
+    direction: validDirections[Math.floor(Math.random() * validDirections.length)]
+  }
+}
+
 function createSingleShips(){
   var numbers = []
   var shipNums = []
@@ -525,7 +625,6 @@ function updateShipHealth(aLocation){
 }
 
 function updateMyShipHealth(aLocation){
-  console.log("my ship hit");
   myShips.forEach(function(ship){
     if (ship.contains(aLocation)){
       ship.health--;
@@ -589,6 +688,28 @@ var myShips = [];
 var computerShots = [];
 var audio = document.getElementById("audio");
 
+function isBoardValid(board){
+  var count = 0;
+  for (var i = 0; i < 10; i++){
+    for (var j = 0; j < 10; j++){
+      if (board.gridState[i][j] == "s"){
+        count++;
+      }
+    }
+  }
+  if (count != 17){
+    return {
+      valid: false,
+      shipCellCount: count
+    }
+  }
+  else {
+    return {
+      valid: true,
+      shipCellCount: count
+    }
+  }
+}
 
 
 
