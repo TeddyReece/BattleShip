@@ -26,6 +26,12 @@ table{
   background-color: black;
 }
 
+#myShipsHeader{
+  text-align: center;
+  color: white;
+  background-color: black;
+}
+
 .sunk {
   color: red;
   text-decoration: line-through;
@@ -39,10 +45,14 @@ table{
   background-color: white;
 }
 
-#leftBox, #rightBox{
+#leftBox, #rightBox, #myBox{
   background-color: #a3c1ad;
   padding: 10px;
   color: black;
   height: 300px;
   border: black solid 2px;
+}
+
+#audio {
+  visibility: hidden;
 }

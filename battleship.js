@@ -14,6 +14,19 @@ function initDomGrid(){
   }
 }
 
+function initMyGrid(){
+  var grid = document.getElementById("myGrid")
+  var currentRow
+  var currentCell
+  for (var i = 0; i < 10; i++) {
+    currentRow = grid.insertRow(i)
+    for (var j = 0; j < 10; j++) {
+      currentCell = currentRow.insertCell(j)
+      currentCell.setAttribute("id", i+"_"+j);
+    }
+  }
+}
+
 function createGridArray(){
   var array = [];
   var currentRow;
@@ -74,6 +87,242 @@ function createShips(){
     });
     ship.name = shipNames[i];
   });
+}
+
+function createMyShips(){
+  var randomRow;
+  var shipNames = ["Dingy", "Submarine", "Destroyer", "Battleship", "Aircraft Carrier"];
+  var shipLengths = [2, 3, 3, 4, 5];
+  var randomColumn;
+  var shipLocations = [];
+  var testCase;
+  for (var k = 0; k < shipLengths.length; k++){
+    randomRow = Math.floor(Math.random() * 10);
+    randomColumn = Math.floor(Math.random() * 10);
+    testCase = isPlacementValid([randomRow, randomColumn], shipLengths[k]);
+    while (!testCase.valid){
+      randomRow = Math.floor(Math.random() * 10);
+      randomColumn = Math.floor(Math.random() * 10);
+      testCase = isPlacementValid([randomRow, randomColumn], shipLengths[k]);
+    }
+
+    if (testCase.direction == "north"){
+      for (var i = 0; i < shipLengths[k]; i++){
+        shipLocations.push([randomRow - i, randomColumn]);
+      }
+    }
+    else if (testCase.direction == "south"){
+      for (var i = 0; i < shipLengths[k]; i++){
+        shipLocations.push([randomRow + i, randomColumn]);
+      }
+    }
+    else if (testCase.direction == "west"){
+      for (var i = 0; i < shipLengths[k]; i++){
+        shipLocations.push([randomRow, randomColumn - i]);
+      }
+    }
+    else {
+      for (var i = 0; i < shipLengths[k]; i++){
+        shipLocations.push([randomRow, randomColumn + i]);
+      }
+    }
+    myShips.push(createShip(shipLocations, shipLengths[k]));
+    shipLocations = [];
+  }
+  myShips.forEach(function(ship, i){
+    ship.cellsOccupied.forEach(function(location){
+      myGrid.gridState[location[0]][location[1]] = "s";
+      document.getElementById(location[0] + "_" + location[1]).setAttribute("class", "ship");
+    });
+    ship.name = shipNames[i];
+    ship.health = shipLengths[i];
+  });
+}
+
+var seeker = {
+  targetAcquired: false,
+  directionIndex: 0,
+  directionOfPursuit: "",
+  directionAcquired: false,
+  initialHit: [],
+  lastHit: [],
+  tries: 0,
+  rotate: function(){
+    if (this.directionIndex == 3){
+      this.directionIndex = 0;
+    }
+    else {
+      this.directionIndex++;
+    }
+  },
+}
+
+function isComputerShotValid(aLocation){
+  if (aLocation[0] > 9 || aLocation[0] < 0 || aLocation[1] > 9 || aLocation[1] < 0){
+    return false;
+  }
+  else {
+    if (myGrid.gridState[aLocation[0]][aLocation[1]] == "m" ||
+    myGrid.gridState[aLocation[0]][aLocation[1]] == "h"){
+      return false;
+    }
+    return true;
+  }
+}
+
+function computerShoots(){
+  if (!seeker.targetAcquired){
+    console.log("no target");
+    var randomRow = Math.floor(Math.random() * 10);
+    var randomColumn = Math.floor(Math.random() * 10);
+    while (shotAlreadyFired([randomRow, randomColumn])){
+      randomRow = Math.floor(Math.random() * 10);
+      randomColumn = Math.floor(Math.random() * 10);
+    }
+    handleComputerShot([randomRow, randomColumn]);
+  }
+  else {
+    console.log("target acquired");
+    if (seeker.directionAcquired){
+      if (seeker.tries > 4){
+        console.log("seeker gave up on acquired direction");
+        seeker.tries = 0;
+        seeker.directionAcquired = false;
+        computerShoots();
+      }
+      else {
+        console.log("direction acquired");
+        console.log(seeker.directionIndex);
+        switch (seeker.directionIndex){
+          case 0:
+            if (!isComputerShotValid([seeker.lastHit[0] - 1, seeker.lastHit[1]])){
+              seeker.directionAcquired = false;
+              seeker.rotate();
+              seeker.tries++;
+              computerShoots();
+            }
+            handleComputerShot([seeker.lastHit[0] - 1, seeker.lastHit[1]]);
+            break;
+          case 1:
+            if (!isComputerShotValid([seeker.lastHit[0], seeker.lastHit[1] + 1])){
+              seeker.directionAcquired = false;
+              seeker.rotate();
+              seeker.tries++;
+              computerShoots();
+            }
+            handleComputerShot([seeker.lastHit[0], seeker.lastHit[1] + 1]);
+            break;
+          case 2:
+            if (!isComputerShotValid([seeker.lastHit[0] + 1, seeker.lastHit[1]])){
+              seeker.directionAcquired = false;
+              seeker.rotate();
+              seeker.tries++;
+              computerShoots();
+            }
+            handleComputerShot([seeker.lastHit[0] + 1, seeker.lastHit[1]]);
+            break;
+          case 3:
+            if (!isComputerShotValid([seeker.lastHit[0], seeker.lastHit[1] - 1])){
+              seeker.directionAcquired = false;
+              seeker.rotate();
+              seeker.tries++;
+              computerShoots();
+            }
+            handleComputerShot([seeker.lastHit[0], seeker.lastHit[1] - 1]);
+            break;
+        }
+      }
+    }
+    else {
+      if (seeker.tries > 4){
+        console.log("seeker gave up on acquired target");
+        seeker.tries = 0;
+        seeker.targetAcquired = false;
+        computerShoots();
+      }
+      else {
+        console.log("NO direction acquired");
+        console.log(seeker.directionIndex);
+        switch (seeker.directionIndex){
+          case 0:
+            if (!isComputerShotValid([seeker.lastHit[0] - 1, seeker.lastHit[1]])){
+              seeker.rotate();
+              seeker.tries++;
+              computerShoots();
+            }
+            handleComputerShot([seeker.lastHit[0] - 1, seeker.lastHit[1]]);
+            break;
+          case 1:
+            if (!isComputerShotValid([seeker.lastHit[0], seeker.lastHit[1] + 1])){
+              seeker.rotate();
+              seeker.tries++;
+              computerShoots();
+            }
+            handleComputerShot([seeker.lastHit[0], seeker.lastHit[1] + 1]);
+            break;
+          case 2:
+            if (!isComputerShotValid([seeker.lastHit[0] + 1, seeker.lastHit[1]])){
+              seeker.rotate();
+              seeker.tries++;
+              computerShoots();
+            }
+            handleComputerShot([seeker.lastHit[0] + 1, seeker.lastHit[1]]);
+            break;
+          case 3:
+            if (!isComputerShotValid([seeker.lastHit[0], seeker.lastHit[1] - 1])){
+              seeker.rotate();
+              seeker.tries++;
+              computerShoots();
+            }
+            handleComputerShot([seeker.lastHit[0], seeker.lastHit[1] - 1]);
+            break;
+        }
+      }
+    }
+  }
+}
+
+function handleComputerShot(cellLocation){
+  if (myGrid.gridState[cellLocation[0]][cellLocation[1]] == ""){
+    myGrid.gridState[cellLocation[0]][cellLocation[1]] = "m";
+    document.getElementById("compMessage").innerHTML = "Computer missed!";
+    if (seeker.directionAcquired){
+      seeker.lastHit = seeker.initialHit;
+      if (seeker.directionIndex < 2){
+        seeker.directionIndex += 2;
+      }
+      else {
+        seeker.directionIndex -= 2;
+      }
+    }
+    seeker.directionAcquired = false;
+  }
+  else if (myGrid.gridState[cellLocation[0]][cellLocation[1]] == "s"){
+    myGrid.gridState[cellLocation[0]][cellLocation[1]] = "h";
+    document.getElementById("compMessage").innerHTML = "Computer scored a hit!";
+    updateMyShipHealth([cellLocation[0], cellLocation[1]]);
+    myGrid.hits++;
+    if (seeker.targetAcquired){
+      console.log("second hit, direction acquired");
+      seeker.directionAcquired = true;
+    }
+    else {
+      seeker.targetAcquired = true;
+      seeker.initialHit = cellLocation;
+    }
+    seeker.lastHit = cellLocation;
+  	audio.load();
+  	audio.play();
+  }
+  myGrid.render();
+  if (myGrid.hits > 16){
+    for (var i = 0; i < 10; i++) {
+      for (var j = 0; j < 10; j++) {
+        document.getElementById(i + "-" + j).removeAttribute("onclick");
+      }
+    }
+    document.getElementById("message").innerHTML = "You lose!";
+  }
 }
 
 function createShip(shipLocation, shipLength){
@@ -244,6 +493,24 @@ var gameState = {
   }
 };
 
+var myGrid = {
+  gridState: createGridArray(),
+  shipLocations: [],
+  hits: 0,
+  render: function(){
+    for (var i = 0; i < 10; i++){
+      for (var j = 0; j < 10; j++){
+        if (this.gridState[i][j] == "h"){
+          document.getElementById(i+"_"+j).setAttribute("class", "hit");
+        }
+        else if (this.gridState[i][j] == "m"){
+          document.getElementById(i+"_"+j).setAttribute("class", "miss");
+        }
+      }
+    }
+  }
+}
+
 function updateShipHealth(aLocation){
   ships.forEach(function(ship){
     if (ship.contains(aLocation)){
@@ -252,6 +519,22 @@ function updateShipHealth(aLocation){
         document.getElementById("message").innerHTML = "Hit and sunk! You sunk the " + ship.name + "!";
         document.getElementById(ship.name).innerHTML = ship.name + ": Sunk";
         document.getElementById(ship.name).setAttribute("class", "sunk");
+      }
+    }
+  });
+}
+
+function updateMyShipHealth(aLocation){
+  console.log("my ship hit");
+  myShips.forEach(function(ship){
+    if (ship.contains(aLocation)){
+      ship.health--;
+      if (ship.health < 1){
+        document.getElementById("compMessage").innerHTML = "Hit and sunk! Computer sunk my " + ship.name + "!";
+        document.getElementById("my" + ship.name).innerHTML = ship.name + ": Sunk";
+        document.getElementById("my" + ship.name).setAttribute("class", "sunk");
+        seeker.targetAcquired = false;
+        seeker.directionAcquired = false;
       }
     }
   });
@@ -271,6 +554,8 @@ function handleClick(cellLocation){
     document.getElementById("message").innerHTML = "Hit!";
     updateShipHealth([cellLocation[0], cellLocation[1]]);
     gameState.hits++;
+    audio.load();
+  	audio.play();
   }
   else if (gameState.gridState[cellLocation[0]][cellLocation[1]] == "h"){
     document.getElementById("message").innerHTML = "You already sunk this ship!";
@@ -279,28 +564,36 @@ function handleClick(cellLocation){
     document.getElementById("message").innerHTML = "You already shot here!";
   }
   gameState.render();
-  if (gameState.hits > 16 || gameState.torpedoCount == 0){
+  if (gameState.hits > 16){
     for (var i = 0; i < 10; i++) {
       for (var j = 0; j < 10; j++) {
         document.getElementById(i + "-" + j).removeAttribute("onclick");
       }
     }
-    if (gameState.hits > 16){
-      document.getElementById("message").innerHTML = "You win!"
-    }
-    else{
-      document.getElementById("message").innerHTML = "You lose!";
-      for (var i = 0; i < 5; i++){
-        document.getElementById(gameState.shipLocations[i][0] + "-" + gameState.shipLocations[i][1]).setAttribute("class", "ship");
-      }
-
-    }
+    document.getElementById("message").innerHTML = "You win!"
   }
+  computerShoots();
+}
+
+function shotAlreadyFired(aLocation){
+  computerShots.forEach(function(shot){
+    if (shot[0] == aLocation[0] && shot[1] == aLocation[1]){
+      return true;
+    }
+  });
+  return false;
 }
 
 var ships = [];
+var myShips = [];
+var computerShots = [];
+var audio = document.getElementById("audio");
+
+
+
+
 
 initDomGrid();
+initMyGrid();
 createShips();
-// gameState.shipLocations = createSingleShips();
-// gameState.render();
+createMyShips();
