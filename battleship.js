@@ -1,28 +1,21 @@
 // bug in createShips at [2,9]
 
-function initDomGrid(){
-  var grid = document.getElementById("grid")
-  var currentRow
-  var currentCell
+function initGrids(){
+  var targetGrid = document.getElementById("grid")
+  var myGrid = document.getElementById("myGrid")
+  var targetCurrentRow;
+  var targetCurrentCell;
+  var myCurrentRow;
+  var myCurrentCell;
   for (var i = 0; i < 10; i++) {
-    currentRow = grid.insertRow(i)
+    targetCurrentRow = targetGrid.insertRow(i);
+    myCurrentRow = myGrid.insertRow(i);
     for (var j = 0; j < 10; j++) {
-      currentCell = currentRow.insertCell(j)
-      currentCell.setAttribute("id", i+"-"+j)
-      currentCell.setAttribute("onclick", "handleClick([" + i + "," + j + "])");
-    }
-  }
-}
-
-function initMyGrid(){
-  var grid = document.getElementById("myGrid")
-  var currentRow
-  var currentCell
-  for (var i = 0; i < 10; i++) {
-    currentRow = grid.insertRow(i)
-    for (var j = 0; j < 10; j++) {
-      currentCell = currentRow.insertCell(j)
-      currentCell.setAttribute("id", i+"_"+j);
+      targetCurrentCell = targetCurrentRow.insertCell(j)
+      targetCurrentCell.setAttribute("id", i+"-"+j)
+      targetCurrentCell.setAttribute("onclick", "handleClick([" + i + "," + j + "])");
+      myCurrentCell = myCurrentRow.insertCell(j)
+      myCurrentCell.setAttribute("id", i+"_"+j);
     }
   }
 }
@@ -302,7 +295,6 @@ function handleComputerShot(cellLocation){
       seeker.initialHit = cellLocation;
     }
     seeker.lastHit = cellLocation;
-  	audio.load();
   	audio.play();
   }
   myGrid.render();
@@ -576,7 +568,6 @@ function createSingleShips(){
 
 var gameState = {
   gridState: createGridArray(),
-  torpedoCount: 25,
   hits: 0,
   shipLocations: [],
   render: function(){
@@ -642,18 +633,13 @@ function updateMyShipHealth(aLocation){
 function handleClick(cellLocation){
   if (gameState.gridState[cellLocation[0]][cellLocation[1]] == ""){
     gameState.gridState[cellLocation[0]][cellLocation[1]] = "m";
-    gameState.torpedoCount--;
-    document.getElementById("torpedoCount").innerHTML = "Torpedoes remaining: " + gameState.torpedoCount;
     document.getElementById("message").innerHTML = "Miss!";
   }
   else if (gameState.gridState[cellLocation[0]][cellLocation[1]] == "s"){
     gameState.gridState[cellLocation[0]][cellLocation[1]] = "h";
-    gameState.torpedoCount--;
-    document.getElementById("torpedoCount").innerHTML = "Torpedoes remaining: " + gameState.torpedoCount;
     document.getElementById("message").innerHTML = "Hit!";
     updateShipHealth([cellLocation[0], cellLocation[1]]);
     gameState.hits++;
-    audio.load();
   	audio.play();
   }
   else if (gameState.gridState[cellLocation[0]][cellLocation[1]] == "h"){
@@ -714,7 +700,6 @@ function isBoardValid(board){
 
 
 
-initDomGrid();
-initMyGrid();
+initGrids();
 createShips();
 createMyShips();

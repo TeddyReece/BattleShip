@@ -20,7 +20,7 @@ table{
   background-color: black;
 }
 
-#targetsHeader {
+#targetsHeader, #myRemainingShips {
   text-align: center;
   color: white;
   background-color: black;
@@ -45,7 +45,7 @@ table{
   background-color: white;
 }
 
-#leftBox, #rightBox, #myBox{
+#rightBox, #myBox{
   background-color: #a3c1ad;
   padding: 10px;
   color: black;
