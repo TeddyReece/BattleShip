@@ -1,3 +1,5 @@
+// bug in createShips at [2,9]
+
 function initDomGrid(){
   var grid = document.getElementById("grid")
   var currentRow
@@ -46,12 +48,6 @@ function createShips(){
       }
       console.log("north")
     }
-    else if (isPlacementValid([randomRow, randomColumn], 3).direction == "east"){
-      for (var i = 0; i < 3; i++){
-        shipLocations.push([randomRow, randomColumn + i]);
-      }
-      console.log("east")
-    }
     else if (isPlacementValid([randomRow, randomColumn], 3).direction == "south"){
       for (var i = 0; i < 3; i++){
         shipLocations.push([randomRow + i, randomColumn]);
@@ -64,11 +60,23 @@ function createShips(){
       }
       console.log("west")
     }
+    else {
+      for (var i = 0; i < 3; i++){
+        shipLocations.push([randomRow, randomColumn + i]);
+      }
+      console.log("east")
+    }
 
     ships.push(createShip(shipLocations, 3));
     console.log(shipLocations);
     shipLocations = [];
   }
+  ships.forEach(function(ship){
+    ship.cellsOccupied.forEach(function(location){
+      gameState.gridState[location[0]][location[1]] = "s";
+      document.getElementById(location[0] + "-" + location[1]).setAttribute("class", "ship");
+    });
+  });
 }
 
 function createShip(shipLocation, shipLength){
@@ -190,7 +198,6 @@ function isPlacementValid(anArray, shipLength){
   if (isWestValid){
     validDirections.push("west");
   }
-
   return {
     valid: isNorthValid || isEastValid || isSouthValid || isWestValid,
     direction: validDirections[Math.floor(Math.random() * validDirections.length)]
@@ -223,10 +230,7 @@ var gameState = {
   gridState: createGridArray(),
   torpedoCount: 25,
   hits: 0,
-  shipLocations: [
-    [[1,1]],
-    [[2,2], [2,3], [2,4]],
-  ],
+  shipLocations: [],
   render: function(){
     for (var i = 0; i < 10; i++){
       for (var j = 0; j < 10; j++){
@@ -283,6 +287,7 @@ function handleClick(cellLocation){
 
 var ships = [];
 
-// initDomGrid();
+initDomGrid();
+// createShips();
 // gameState.shipLocations = createSingleShips();
 // gameState.render();
