@@ -37,11 +37,11 @@ function createShips(){
   for (var k = 0; k < shipLengths.length; k++){
     randomRow = Math.floor(Math.random() * 10);
     randomColumn = Math.floor(Math.random() * 10);
-    testCase = isPlacementValid([randomRow, randomColumn], 3);
+    testCase = isPlacementValid([randomRow, randomColumn], shipLengths[k]);
     while (!testCase.valid){
       randomRow = Math.floor(Math.random() * 10);
       randomColumn = Math.floor(Math.random() * 10);
-      testCase = isPlacementValid([randomRow, randomColumn], 3);
+      testCase = isPlacementValid([randomRow, randomColumn], shipLengths[k]);
     }
 
     if (testCase.direction == "north"){
@@ -64,7 +64,6 @@ function createShips(){
         shipLocations.push([randomRow, randomColumn + i]);
       }
     }
-
     ships.push(createShip(shipLocations, shipLengths[k]));
     shipLocations = [];
   }
