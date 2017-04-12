@@ -65,15 +65,15 @@ function createShips(){
       }
     }
 
-    ships.push(createShip(shipLocations, 3));
+    ships.push(createShip(shipLocations, shipLengths[k]));
     shipLocations = [];
   }
-  ships.forEach(function(ship){
+  ships.forEach(function(ship, i){
     ship.cellsOccupied.forEach(function(location){
       gameState.gridState[location[0]][location[1]] = "s";
       document.getElementById(location[0] + "-" + location[1]).setAttribute("class", "ship");
     });
-    ship.name = shipNames[k];
+    ship.name = shipNames[i];
   });
 }
 
@@ -247,7 +247,7 @@ var gameState = {
 
 function updateShipHealth(aLocation){
   ships.forEach(function(ship){
-    if (ship.contains(aLocation[0])){
+    if (ship.contains(aLocation)){
       ship.health--;
       if (ship.health < 1){
         document.getElementById("messageBox").innerHTML = "Hit and sunk! You sunk the " + ship.name + "!";
@@ -268,7 +268,7 @@ function handleClick(cellLocation){
     gameState.torpedoCount--;
     document.getElementById("torpedoCount").innerHTML = "Torpedoes remaining: " + gameState.torpedoCount;
     document.getElementById("messageBox").innerHTML = "Hit!";
-    updateShipHealth();
+    updateShipHealth([cellLocation[0], cellLocation[1]]);
     gameState.hits++;
   }
   else if (gameState.gridState[cellLocation[0]][cellLocation[1]] == "h"){
@@ -278,13 +278,13 @@ function handleClick(cellLocation){
     document.getElementById("messageBox").innerHTML = "You already shot here!";
   }
   gameState.render();
-  if (gameState.hits == 5 || gameState.torpedoCount == 0){
+  if (gameState.hits > 16 || gameState.torpedoCount == 0){
     for (var i = 0; i < 10; i++) {
       for (var j = 0; j < 10; j++) {
         document.getElementById(i + "-" + j).removeAttribute("onclick");
       }
     }
-    if (gameState.hits == 5){
+    if (gameState.hits > 16){
       document.getElementById("messageBox").innerHTML = "You win!"
     }
     else{
