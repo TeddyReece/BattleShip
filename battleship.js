@@ -249,7 +249,9 @@ function updateShipHealth(aLocation){
     if (ship.contains(aLocation)){
       ship.health--;
       if (ship.health < 1){
-        document.getElementById("messageBox").innerHTML = "Hit and sunk! You sunk the " + ship.name + "!";
+        document.getElementById("message").innerHTML = "Hit and sunk! You sunk the " + ship.name + "!";
+        document.getElementById(ship.name).innerHTML = ship.name + ": Sunk";
+        document.getElementById(ship.name).setAttribute("class", "sunk");
       }
     }
   });
@@ -260,21 +262,21 @@ function handleClick(cellLocation){
     gameState.gridState[cellLocation[0]][cellLocation[1]] = "m";
     gameState.torpedoCount--;
     document.getElementById("torpedoCount").innerHTML = "Torpedoes remaining: " + gameState.torpedoCount;
-    document.getElementById("messageBox").innerHTML = "Miss!";
+    document.getElementById("message").innerHTML = "Miss!";
   }
   else if (gameState.gridState[cellLocation[0]][cellLocation[1]] == "s"){
     gameState.gridState[cellLocation[0]][cellLocation[1]] = "h";
     gameState.torpedoCount--;
     document.getElementById("torpedoCount").innerHTML = "Torpedoes remaining: " + gameState.torpedoCount;
-    document.getElementById("messageBox").innerHTML = "Hit!";
+    document.getElementById("message").innerHTML = "Hit!";
     updateShipHealth([cellLocation[0], cellLocation[1]]);
     gameState.hits++;
   }
   else if (gameState.gridState[cellLocation[0]][cellLocation[1]] == "h"){
-    document.getElementById("messageBox").innerHTML = "You already sunk this ship!";
+    document.getElementById("message").innerHTML = "You already sunk this ship!";
   }
   else {
-    document.getElementById("messageBox").innerHTML = "You already shot here!";
+    document.getElementById("message").innerHTML = "You already shot here!";
   }
   gameState.render();
   if (gameState.hits > 16 || gameState.torpedoCount == 0){
@@ -284,10 +286,10 @@ function handleClick(cellLocation){
       }
     }
     if (gameState.hits > 16){
-      document.getElementById("messageBox").innerHTML = "You win!"
+      document.getElementById("message").innerHTML = "You win!"
     }
     else{
-      document.getElementById("messageBox").innerHTML = "You lose!";
+      document.getElementById("message").innerHTML = "You lose!";
       for (var i = 0; i < 5; i++){
         document.getElementById(gameState.shipLocations[i][0] + "-" + gameState.shipLocations[i][1]).setAttribute("class", "ship");
       }

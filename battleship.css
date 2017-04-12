@@ -5,7 +5,9 @@ td{
   background-color: blue;
 }
 
-h1 {
+#header{
+  background-color: blue;
+  color: white;
   text-align: center;
 }
 
@@ -18,7 +20,16 @@ table{
   background-color: black;
 }
 
+#targetsHeader {
+  text-align: center;
+  color: white;
+  background-color: black;
+}
 
+.sunk {
+  color: red;
+  text-decoration: line-through;
+}
 
 .hit {
   background-color: red;
@@ -26,4 +37,12 @@ table{
 
 .miss {
   background-color: white;
+}
+
+#leftBox, #rightBox{
+  background-color: #a3c1ad;
+  padding: 10px;
+  color: black;
+  height: 300px;
+  border: black solid 2px;
 }
