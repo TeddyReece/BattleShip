@@ -29,46 +29,43 @@ function createGridArray(){
 
 function createShips(){
   var randomRow;
+  var shipNames = ["Dingy", "Submarine", "Destroyer", "Battleship", "Aircraft Carrier"];
+  var shipLengths = [2, 3, 3, 4, 5];
   var randomColumn;
   var shipLocations = [];
-  for (var k = 0; k < 5; k++){
-    console.log("Loop number " + k);
+  var testCase;
+  for (var k = 0; k < shipLengths.length; k++){
     randomRow = Math.floor(Math.random() * 10);
     randomColumn = Math.floor(Math.random() * 10);
-    while (!isPlacementValid([randomRow, randomColumn], 3).valid){
+    testCase = isPlacementValid([randomRow, randomColumn], 3);
+    while (!testCase.valid){
       randomRow = Math.floor(Math.random() * 10);
       randomColumn = Math.floor(Math.random() * 10);
+      testCase = isPlacementValid([randomRow, randomColumn], 3);
     }
-    console.log("row " + randomRow);
-    console.log("column " + randomColumn);
-    console.log(isPlacementValid([randomRow, randomColumn], 3));
-    if (isPlacementValid([randomRow, randomColumn], 3).direction == "north"){
-      for (var i = 0; i < 3; i++){
+
+    if (testCase.direction == "north"){
+      for (var i = 0; i < shipLengths[k]; i++){
         shipLocations.push([randomRow - i, randomColumn]);
       }
-      console.log("north")
     }
-    else if (isPlacementValid([randomRow, randomColumn], 3).direction == "south"){
-      for (var i = 0; i < 3; i++){
+    else if (testCase.direction == "south"){
+      for (var i = 0; i < shipLengths[k]; i++){
         shipLocations.push([randomRow + i, randomColumn]);
       }
-      console.log("south")
     }
-    else if (isPlacementValid([randomRow, randomColumn], 3).direction == "west"){
-      for (var i = 0; i < 3; i++){
+    else if (testCase.direction == "west"){
+      for (var i = 0; i < shipLengths[k]; i++){
         shipLocations.push([randomRow, randomColumn - i]);
       }
-      console.log("west")
     }
     else {
-      for (var i = 0; i < 3; i++){
+      for (var i = 0; i < shipLengths[k]; i++){
         shipLocations.push([randomRow, randomColumn + i]);
       }
-      console.log("east")
     }
 
     ships.push(createShip(shipLocations, 3));
-    console.log(shipLocations);
     shipLocations = [];
   }
   ships.forEach(function(ship){
@@ -76,6 +73,7 @@ function createShips(){
       gameState.gridState[location[0]][location[1]] = "s";
       document.getElementById(location[0] + "-" + location[1]).setAttribute("class", "ship");
     });
+    ship.name = shipNames[k];
   });
 }
 
@@ -83,6 +81,8 @@ function createShip(shipLocation, shipLength){
   return {
     length: shipLength,
     cellsOccupied: shipLocation,
+    name: "",
+    health: shipLength,
     // 'contains' returns true if aLocation is within the cellsOccupied array
     contains: function(aLocation){
       for (var i = 0; i < this.cellsOccupied.length; i++){
@@ -245,6 +245,17 @@ var gameState = {
   }
 };
 
+function updateShipHealth(aLocation){
+  ships.forEach(function(ship){
+    if (ship.contains(aLocation[0])){
+      ship.health--;
+      if (ship.health < 1){
+        document.getElementById("messageBox").innerHTML = "Hit and sunk! You sunk the " + ship.name + "!";
+      }
+    }
+  });
+}
+
 function handleClick(cellLocation){
   if (gameState.gridState[cellLocation[0]][cellLocation[1]] == ""){
     gameState.gridState[cellLocation[0]][cellLocation[1]] = "m";
@@ -257,6 +268,7 @@ function handleClick(cellLocation){
     gameState.torpedoCount--;
     document.getElementById("torpedoCount").innerHTML = "Torpedoes remaining: " + gameState.torpedoCount;
     document.getElementById("messageBox").innerHTML = "Hit!";
+    updateShipHealth();
     gameState.hits++;
   }
   else if (gameState.gridState[cellLocation[0]][cellLocation[1]] == "h"){
@@ -288,6 +300,6 @@ function handleClick(cellLocation){
 var ships = [];
 
 initDomGrid();
-// createShips();
+createShips();
 // gameState.shipLocations = createSingleShips();
 // gameState.render();
