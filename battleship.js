@@ -23,7 +23,7 @@ function initGrids(){
   }
 }
 
-function createGridArray(){
+function populateGridArray(){
   var array = [];
   var currentRow;
   for (var i = 0; i < 10; i++){
@@ -35,6 +35,29 @@ function createGridArray(){
   }
   return array;
 };
+
+function checkRecentHits(){
+  var validShots = [];
+  seeker.recentHits.forEach(function(hit){
+    if (isComputerShotValid([hit[0] - 1, hit[1]])){
+      foundValidShot = true;
+      validShots.push([hit[0] - 1, hit[1]]);
+    }
+    else if (isComputerShotValid([hit[0], hit[1] + 1])){
+      foundValidShot = true;
+      validShots.push([hit[0], hit[1] + 1]);
+    }
+    else if (isComputerShotValid([hit[0] + 1, hit[1]])){
+      foundValidShot = true;
+      validShots.push([hit[0] + 1, hit[1]]);
+    }
+    else if (isComputerShotValid([hit[0], hit[1] - 1])){
+      foundValidShot = true;
+      validShots.push([hit[0], hit[1] - 1]);
+    }
+  });
+  return validShots;
+}
 
 function createShips(shipArray, board){
   var randomRow;
@@ -93,7 +116,9 @@ var seeker = {
   directionAcquired: false,
   initialHit: [],
   lastHit: [],
+  recentHits: [],
   tries: 0,
+  recentShipsSunk: [],
   rotate: function(){
     if (this.directionIndex == 3){
       this.directionIndex = 0;
@@ -109,6 +134,16 @@ var seeker = {
     else {
       this.directionIndex -= 2;
     }
+  },
+  logSelf: function(){
+    console.log("------");
+    console.log("targetAcquired: " + this.targetAcquired);
+    console.log("directionAcquired: " + this.directionAcquired);
+    console.log("directionIndex: " + this.directionIndex);
+    console.log("initialHit: " + this.initialHit[0] + "-" + this.initialHit[1]);
+    console.log("lastHit: " + this.lastHit[0] + "-" + this.initialHit[1]);
+    console.log("tries: " + this.tries);
+    console.log("------");
   }
 }
 
@@ -139,6 +174,8 @@ function randomShot(){
 // computer takes a shot following the seeker algorithm, only called once target
 // is acquired
 function seekerShot(){
+  var adjacentToHits = [];
+  var randomNum;
   if (seeker.directionAcquired){
     // seeker will take a guess in the direction of the acquired direction
     // if seeker misses than directionAcquired will be set to false and seekerShot
@@ -192,12 +229,18 @@ function seekerShot(){
   }
   // seeker.directionAcquired is false
   else {
-    // seeker has tested more than 4 locations then targetAcquired is set to false
-    // and computerTakesTurn called
-    if (seeker.tries > 4){
-      seeker.tries = 0;
-      seeker.targetAcquired = false;
-      computerTakesTurn();
+    // seeker has tested more than 6 locations
+    if (seeker.tries > 6){
+      adjacentToHits = checkRecentHits();
+      if (adjacentToHits.length != 0){
+        randomNum = Math.floor(Math.random() * adjacentToHits.length);
+        handleComputerShot(adjacentToHits[randomNum]);
+      }
+      else {
+        seeker.tries = 0;
+        seeker.targetAcquired = false;
+        randomShot();
+      }
     }
     // seeker has acquired a target but not a direction, and has not yet tested
     // 4 directions
@@ -209,7 +252,9 @@ function seekerShot(){
             seeker.tries++;
             seekerShot();
           }
-          handleComputerShot([seeker.lastHit[0] - 1, seeker.lastHit[1]]);
+          else {
+            handleComputerShot([seeker.lastHit[0] - 1, seeker.lastHit[1]]);
+          }
           break;
         case 1:
           if (!isComputerShotValid([seeker.lastHit[0], seeker.lastHit[1] + 1])){
@@ -217,7 +262,9 @@ function seekerShot(){
             seeker.tries++;
             seekerShot();
           }
-          handleComputerShot([seeker.lastHit[0], seeker.lastHit[1] + 1]);
+          else {
+            handleComputerShot([seeker.lastHit[0], seeker.lastHit[1] + 1]);
+          }
           break;
         case 2:
           if (!isComputerShotValid([seeker.lastHit[0] + 1, seeker.lastHit[1]])){
@@ -225,7 +272,9 @@ function seekerShot(){
             seeker.tries++;
             seekerShot();
           }
-          handleComputerShot([seeker.lastHit[0] + 1, seeker.lastHit[1]]);
+          else {
+            handleComputerShot([seeker.lastHit[0] + 1, seeker.lastHit[1]]);
+          }
           break;
         case 3:
           if (!isComputerShotValid([seeker.lastHit[0], seeker.lastHit[1] - 1])){
@@ -233,7 +282,9 @@ function seekerShot(){
             seeker.tries++;
             seekerShot();
           }
-          handleComputerShot([seeker.lastHit[0], seeker.lastHit[1] - 1]);
+          else {
+            handleComputerShot([seeker.lastHit[0], seeker.lastHit[1] - 1]);
+          }
           break;
       }
     }
@@ -241,7 +292,6 @@ function seekerShot(){
 }
 
 function computerTakesTurn(){
-  console.log(seeker);
   if (!seeker.targetAcquired){
     randomShot();
   }
@@ -251,6 +301,7 @@ function computerTakesTurn(){
 }
 
 function handleComputerShot(cellLocation){
+  console.log("row " + cellLocation[0] + " column " + cellLocation[1]);
   if (myGrid.gridState[cellLocation[0]][cellLocation[1]] == ""){
     myGrid.gridState[cellLocation[0]][cellLocation[1]] = "m";
     document.getElementById("compMessage").innerHTML = "Computer missed!";
@@ -258,16 +309,15 @@ function handleComputerShot(cellLocation){
     // hit and reverse direction for next turn
     if (seeker.directionAcquired){
       seeker.lastHit = seeker.initialHit;
-      seeker.reverse;
+      seeker.reverse();
       seeker.directionAcquired = false;
     }
     seeker.tries++;
+    computerShots.push(cellLocation);
   }
   else if (myGrid.gridState[cellLocation[0]][cellLocation[1]] == "s"){
     myGrid.gridState[cellLocation[0]][cellLocation[1]] = "h";
     document.getElementById("compMessage").innerHTML = "Computer scored a hit!";
-    updateMyShipHealth([cellLocation[0], cellLocation[1]]);
-    myGrid.hits++;
     if (seeker.targetAcquired){
       seeker.directionAcquired = true;
     }
@@ -277,7 +327,11 @@ function handleComputerShot(cellLocation){
     }
     seeker.lastHit = cellLocation;
     seeker.tries = 0;
+    myGrid.hits++;
   	audio.play();
+    computerShots.push(cellLocation);
+    seeker.recentHits.push(cellLocation);
+    updateMyShipHealth([cellLocation[0], cellLocation[1]]);
   }
   myGrid.render();
   if (myGrid.hits > 16){
@@ -290,6 +344,14 @@ function disableOnClicks(){
   for (var i = 0; i < 10; i++) {
     for (var j = 0; j < 10; j++) {
       document.getElementById(i + "-" + j).removeAttribute("onclick");
+    }
+  }
+}
+
+function enableOnClicks(){
+  for (var i = 0; i < 10; i++) {
+    for (var j = 0; j < 10; j++) {
+      document.getElementById(i + "-" + j).setAttribute("onclick", "handleClick([" + i + "," + j + "])");
     }
   }
 }
@@ -447,7 +509,7 @@ function createSingleShips(){
 
 // gameState object manages the state of the top (target) grid
 var gameState = {
-  gridState: createGridArray(),
+  gridState: populateGridArray(),
   hits: 0,
   shipLocations: [],
   render: function(){
@@ -466,7 +528,7 @@ var gameState = {
 
 // myGrid object manages the state of the bottom (player) grid
 var myGrid = {
-  gridState: createGridArray(),
+  gridState: populateGridArray(),
   shipLocations: [],
   hits: 0,
   render: function(){
@@ -500,6 +562,7 @@ function updateTargetShipHealth(aLocation){
 // checks to see if computer has sunk a ship, called whenever computer gets a hit
 // also resets the seeker object
 function updateMyShipHealth(aLocation){
+  var lengthOfShipsSunk = 0;
   myShips.forEach(function(ship){
     if (ship.contains(aLocation)){
       ship.health--;
@@ -507,8 +570,18 @@ function updateMyShipHealth(aLocation){
         document.getElementById("compMessage").innerHTML = "Hit and sunk! Computer sunk my " + ship.name + "!";
         document.getElementById("my" + ship.name).innerHTML = ship.name + ": Sunk";
         document.getElementById("my" + ship.name).setAttribute("class", "sunk");
-        seeker.targetAcquired = false;
-        seeker.directionAcquired = false;
+        seeker.recentShipsSunk.push(ship);
+        seeker.recentShipsSunk.forEach(function(ship){
+          lengthOfShipsSunk += ship.length;
+        });
+        console.log("length of recent hits: " + seeker.recentHits.length);
+        console.log("total length of ships sunk: " + lengthOfShipsSunk);
+        if (seeker.recentHits.length == lengthOfShipsSunk){
+          seeker.targetAcquired = false;
+          seeker.directionAcquired = false;
+          seeker.recentHits = [];
+          seeker.recentShipsSunk = [];
+        }
       }
     }
   });
@@ -518,6 +591,7 @@ function updateMyShipHealth(aLocation){
 // updates state and DOM accordingly
 // calls computerTakesTurn when finished
 function handleClick(cellLocation){
+  var clickValid = true;
   if (gameState.gridState[cellLocation[0]][cellLocation[1]] == ""){
     gameState.gridState[cellLocation[0]][cellLocation[1]] = "m";
     document.getElementById("message").innerHTML = "Miss!";
@@ -531,25 +605,30 @@ function handleClick(cellLocation){
   }
   else if (gameState.gridState[cellLocation[0]][cellLocation[1]] == "h"){
     document.getElementById("message").innerHTML = "You already sunk this ship!";
+    clickValid = false;
   }
   else {
     document.getElementById("message").innerHTML = "You already shot here!";
+    clickValid = false;
   }
   gameState.render();
   if (gameState.hits > 16){
     disableOnClicks();
     document.getElementById("message").innerHTML = "You win!"
   }
-  computerTakesTurn();
+  if (clickValid){
+    setTimeout(computerTakesTurn, 1000);
+  }
 }
 
 function shotAlreadyFired(aLocation){
+  var alreadyFired = false;
   computerShots.forEach(function(shot){
     if (shot[0] == aLocation[0] && shot[1] == aLocation[1]){
-      return true;
+      alreadyFired = true;
     }
   });
-  return false;
+  return alreadyFired;
 }
 
 // function not called, used for debugging. Returns an object with
@@ -576,6 +655,18 @@ function isBoardValid(board){
       shipCellCount: count
     }
   }
+}
+
+function turnsTaken(board){
+  var count = 0;
+  for (var i = 0; i < 10; i++){
+    for (var j = 0; j < 10; j++){
+      if (board.gridState[i][j] == "m" || board.gridState[i][j] == "h"){
+        count++;
+      }
+    }
+  }
+  return count;
 }
 
 initGrids();
