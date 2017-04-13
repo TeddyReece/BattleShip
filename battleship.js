@@ -90,7 +90,6 @@ function createShips(shipArray, board){
 var seeker = {
   targetAcquired: false,
   directionIndex: 0,
-  directionOfPursuit: "",
   directionAcquired: false,
   initialHit: [],
   lastHit: [],
@@ -103,6 +102,14 @@ var seeker = {
       this.directionIndex++;
     }
   },
+  reverse: function(){
+    if (this.directionIndex < 2){
+      this.directionIndex += 2;
+    }
+    else {
+      this.directionIndex -= 2;
+    }
+  }
 }
 
 function isComputerShotValid(aLocation){
@@ -118,107 +125,128 @@ function isComputerShotValid(aLocation){
   }
 }
 
-function computerShoots(){
-  if (!seeker.targetAcquired){
-    var randomRow = Math.floor(Math.random() * 10);
-    var randomColumn = Math.floor(Math.random() * 10);
-    while (shotAlreadyFired([randomRow, randomColumn])){
-      randomRow = Math.floor(Math.random() * 10);
-      randomColumn = Math.floor(Math.random() * 10);
+// computer takes a random shot at the board, only called when no target acquired
+function randomShot(){
+  var randomRow = Math.floor(Math.random() * 10);
+  var randomColumn = Math.floor(Math.random() * 10);
+  while (shotAlreadyFired([randomRow, randomColumn])){
+    randomRow = Math.floor(Math.random() * 10);
+    randomColumn = Math.floor(Math.random() * 10);
+  }
+  handleComputerShot([randomRow, randomColumn]);
+}
+
+// computer takes a shot following the seeker algorithm, only called once target
+// is acquired
+function seekerShot(){
+  if (seeker.directionAcquired){
+    // seeker will take a guess in the direction of the acquired direction
+    // if seeker misses than directionAcquired will be set to false and seekerShot
+    // called again
+    switch (seeker.directionIndex){
+      case 0:
+        if (!isComputerShotValid([seeker.lastHit[0] - 1, seeker.lastHit[1]])){
+          seeker.directionAcquired = false;
+          seeker.rotate();
+          seeker.tries++;
+          seekerShot()
+        }
+        else {
+          handleComputerShot([seeker.lastHit[0] - 1, seeker.lastHit[1]]);
+        }
+        break;
+      case 1:
+        if (!isComputerShotValid([seeker.lastHit[0], seeker.lastHit[1] + 1])){
+          seeker.directionAcquired = false;
+          seeker.rotate();
+          seeker.tries++;
+          seekerShot();
+        }
+        else {
+          handleComputerShot([seeker.lastHit[0], seeker.lastHit[1] + 1]);
+        }
+        break;
+      case 2:
+        if (!isComputerShotValid([seeker.lastHit[0] + 1, seeker.lastHit[1]])){
+          seeker.directionAcquired = false;
+          seeker.rotate();
+          seeker.tries++;
+          seekerShot();
+        }
+        else {
+          handleComputerShot([seeker.lastHit[0] + 1, seeker.lastHit[1]]);
+        }
+        break;
+      case 3:
+        if (!isComputerShotValid([seeker.lastHit[0], seeker.lastHit[1] - 1])){
+          seeker.directionAcquired = false;
+          seeker.rotate();
+          seeker.tries++;
+          seekerShot();
+        }
+        else {
+          handleComputerShot([seeker.lastHit[0], seeker.lastHit[1] - 1]);
+        }
+        break;
     }
-    handleComputerShot([randomRow, randomColumn]);
+  }
+  // seeker.directionAcquired is false
+  else {
+    // seeker has tested more than 4 locations then targetAcquired is set to false
+    // and computerTakesTurn called
+    if (seeker.tries > 4){
+      seeker.tries = 0;
+      seeker.targetAcquired = false;
+      computerTakesTurn();
+    }
+    // seeker has acquired a target but not a direction, and has not yet tested
+    // 4 directions
+    else {
+      switch (seeker.directionIndex){
+        case 0:
+          if (!isComputerShotValid([seeker.lastHit[0] - 1, seeker.lastHit[1]])){
+            seeker.rotate();
+            seeker.tries++;
+            seekerShot();
+          }
+          handleComputerShot([seeker.lastHit[0] - 1, seeker.lastHit[1]]);
+          break;
+        case 1:
+          if (!isComputerShotValid([seeker.lastHit[0], seeker.lastHit[1] + 1])){
+            seeker.rotate();
+            seeker.tries++;
+            seekerShot();
+          }
+          handleComputerShot([seeker.lastHit[0], seeker.lastHit[1] + 1]);
+          break;
+        case 2:
+          if (!isComputerShotValid([seeker.lastHit[0] + 1, seeker.lastHit[1]])){
+            seeker.rotate();
+            seeker.tries++;
+            seekerShot();
+          }
+          handleComputerShot([seeker.lastHit[0] + 1, seeker.lastHit[1]]);
+          break;
+        case 3:
+          if (!isComputerShotValid([seeker.lastHit[0], seeker.lastHit[1] - 1])){
+            seeker.rotate();
+            seeker.tries++;
+            seekerShot();
+          }
+          handleComputerShot([seeker.lastHit[0], seeker.lastHit[1] - 1]);
+          break;
+      }
+    }
+  }
+}
+
+function computerTakesTurn(){
+  console.log(seeker);
+  if (!seeker.targetAcquired){
+    randomShot();
   }
   else {
-    if (seeker.directionAcquired){
-      if (seeker.tries > 4){
-        seeker.tries = 0;
-        seeker.directionAcquired = false;
-        computerShoots();
-      }
-      else {
-        switch (seeker.directionIndex){
-          case 0:
-            if (!isComputerShotValid([seeker.lastHit[0] - 1, seeker.lastHit[1]])){
-              seeker.directionAcquired = false;
-              seeker.rotate();
-              seeker.tries++;
-              computerShoots();
-            }
-            handleComputerShot([seeker.lastHit[0] - 1, seeker.lastHit[1]]);
-            break;
-          case 1:
-            if (!isComputerShotValid([seeker.lastHit[0], seeker.lastHit[1] + 1])){
-              seeker.directionAcquired = false;
-              seeker.rotate();
-              seeker.tries++;
-              computerShoots();
-            }
-            handleComputerShot([seeker.lastHit[0], seeker.lastHit[1] + 1]);
-            break;
-          case 2:
-            if (!isComputerShotValid([seeker.lastHit[0] + 1, seeker.lastHit[1]])){
-              seeker.directionAcquired = false;
-              seeker.rotate();
-              seeker.tries++;
-              computerShoots();
-            }
-            handleComputerShot([seeker.lastHit[0] + 1, seeker.lastHit[1]]);
-            break;
-          case 3:
-            if (!isComputerShotValid([seeker.lastHit[0], seeker.lastHit[1] - 1])){
-              seeker.directionAcquired = false;
-              seeker.rotate();
-              seeker.tries++;
-              computerShoots();
-            }
-            handleComputerShot([seeker.lastHit[0], seeker.lastHit[1] - 1]);
-            break;
-        }
-      }
-    }
-    else {
-      if (seeker.tries > 4){
-        seeker.tries = 0;
-        seeker.targetAcquired = false;
-        computerShoots();
-      }
-      else {
-        switch (seeker.directionIndex){
-          case 0:
-            if (!isComputerShotValid([seeker.lastHit[0] - 1, seeker.lastHit[1]])){
-              seeker.rotate();
-              seeker.tries++;
-              computerShoots();
-            }
-            handleComputerShot([seeker.lastHit[0] - 1, seeker.lastHit[1]]);
-            break;
-          case 1:
-            if (!isComputerShotValid([seeker.lastHit[0], seeker.lastHit[1] + 1])){
-              seeker.rotate();
-              seeker.tries++;
-              computerShoots();
-            }
-            handleComputerShot([seeker.lastHit[0], seeker.lastHit[1] + 1]);
-            break;
-          case 2:
-            if (!isComputerShotValid([seeker.lastHit[0] + 1, seeker.lastHit[1]])){
-              seeker.rotate();
-              seeker.tries++;
-              computerShoots();
-            }
-            handleComputerShot([seeker.lastHit[0] + 1, seeker.lastHit[1]]);
-            break;
-          case 3:
-            if (!isComputerShotValid([seeker.lastHit[0], seeker.lastHit[1] - 1])){
-              seeker.rotate();
-              seeker.tries++;
-              computerShoots();
-            }
-            handleComputerShot([seeker.lastHit[0], seeker.lastHit[1] - 1]);
-            break;
-        }
-      }
-    }
+    seekerShot();
   }
 }
 
@@ -226,16 +254,14 @@ function handleComputerShot(cellLocation){
   if (myGrid.gridState[cellLocation[0]][cellLocation[1]] == ""){
     myGrid.gridState[cellLocation[0]][cellLocation[1]] = "m";
     document.getElementById("compMessage").innerHTML = "Computer missed!";
+    // if seeker was following an acquired direction, then go back to the initial
+    // hit and reverse direction for next turn
     if (seeker.directionAcquired){
       seeker.lastHit = seeker.initialHit;
-      if (seeker.directionIndex < 2){
-        seeker.directionIndex += 2;
-      }
-      else {
-        seeker.directionIndex -= 2;
-      }
+      seeker.reverse;
+      seeker.directionAcquired = false;
     }
-    seeker.directionAcquired = false;
+    seeker.tries++;
   }
   else if (myGrid.gridState[cellLocation[0]][cellLocation[1]] == "s"){
     myGrid.gridState[cellLocation[0]][cellLocation[1]] = "h";
@@ -250,16 +276,21 @@ function handleComputerShot(cellLocation){
       seeker.initialHit = cellLocation;
     }
     seeker.lastHit = cellLocation;
+    seeker.tries = 0;
   	audio.play();
   }
   myGrid.render();
   if (myGrid.hits > 16){
-    for (var i = 0; i < 10; i++) {
-      for (var j = 0; j < 10; j++) {
-        document.getElementById(i + "-" + j).removeAttribute("onclick");
-      }
-    }
+    disableOnClicks();
     document.getElementById("message").innerHTML = "You lose!";
+  }
+}
+
+function disableOnClicks(){
+  for (var i = 0; i < 10; i++) {
+    for (var j = 0; j < 10; j++) {
+      document.getElementById(i + "-" + j).removeAttribute("onclick");
+    }
   }
 }
 
@@ -485,7 +516,7 @@ function updateMyShipHealth(aLocation){
 
 // handles all clicks in the target grid
 // updates state and DOM accordingly
-// calls computerShoots when finished
+// calls computerTakesTurn when finished
 function handleClick(cellLocation){
   if (gameState.gridState[cellLocation[0]][cellLocation[1]] == ""){
     gameState.gridState[cellLocation[0]][cellLocation[1]] = "m";
@@ -506,14 +537,10 @@ function handleClick(cellLocation){
   }
   gameState.render();
   if (gameState.hits > 16){
-    for (var i = 0; i < 10; i++) {
-      for (var j = 0; j < 10; j++) {
-        document.getElementById(i + "-" + j).removeAttribute("onclick");
-      }
-    }
+    disableOnClicks();
     document.getElementById("message").innerHTML = "You win!"
   }
-  computerShoots();
+  computerTakesTurn();
 }
 
 function shotAlreadyFired(aLocation){
