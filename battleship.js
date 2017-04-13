@@ -1,4 +1,7 @@
-// bug in createShips at [2,9]
+var targetShips = [];
+var myShips = [];
+var computerShots = [];
+var audio = document.getElementById("audio");
 
 function initGrids(){
   var targetGrid = document.getElementById("grid")
@@ -33,21 +36,21 @@ function createGridArray(){
   return array;
 };
 
-function createShips(){
+function createShips(shipArray, board){
   var randomRow;
+  var randomColumn;
   var shipNames = ["Dingy", "Submarine", "Destroyer", "Battleship", "Aircraft Carrier"];
   var shipLengths = [2, 3, 3, 4, 5];
-  var randomColumn;
   var shipLocations = [];
   var testCase;
   for (var k = 0; k < shipLengths.length; k++){
     randomRow = Math.floor(Math.random() * 10);
     randomColumn = Math.floor(Math.random() * 10);
-    testCase = isPlacementValid([randomRow, randomColumn], shipLengths[k]);
+    testCase = isPlacementValid([randomRow, randomColumn], shipLengths[k], shipArray);
     while (!testCase.valid){
       randomRow = Math.floor(Math.random() * 10);
       randomColumn = Math.floor(Math.random() * 10);
-      testCase = isPlacementValid([randomRow, randomColumn], shipLengths[k]);
+      testCase = isPlacementValid([randomRow, randomColumn], shipLengths[k], shipArray);
     }
 
     if (testCase.direction == "north"){
@@ -70,65 +73,17 @@ function createShips(){
         shipLocations.push([randomRow, randomColumn + i]);
       }
     }
-    ships.push(createShip(shipLocations, shipLengths[k]));
+    shipArray.push(createShip(shipLocations, shipLengths[k]));
     shipLocations = [];
   }
-  ships.forEach(function(ship, i){
+  shipArray.forEach(function(ship, i){
     ship.cellsOccupied.forEach(function(location){
-      gameState.gridState[location[0]][location[1]] = "s";
-      // document.getElementById(location[0] + "-" + location[1]).setAttribute("class", "ship");
+      board.gridState[location[0]][location[1]] = "s";
+      if (board == myGrid){
+        document.getElementById(location[0] + "_" + location[1]).setAttribute("class", "ship");
+      }
     });
     ship.name = shipNames[i];
-  });
-}
-
-function createMyShips(){
-  var randomRow;
-  var shipNames = ["Dingy", "Submarine", "Destroyer", "Battleship", "Aircraft Carrier"];
-  var shipLengths = [2, 3, 3, 4, 5];
-  var randomColumn;
-  var shipLocations = [];
-  var testCase;
-  for (var k = 0; k < shipLengths.length; k++){
-    randomRow = Math.floor(Math.random() * 10);
-    randomColumn = Math.floor(Math.random() * 10);
-    testCase = isMyPlacementValid([randomRow, randomColumn], shipLengths[k]);
-    while (!testCase.valid){
-      randomRow = Math.floor(Math.random() * 10);
-      randomColumn = Math.floor(Math.random() * 10);
-      testCase = isMyPlacementValid([randomRow, randomColumn], shipLengths[k]);
-    }
-
-    if (testCase.direction == "north"){
-      for (var i = 0; i < shipLengths[k]; i++){
-        shipLocations.push([randomRow - i, randomColumn]);
-      }
-    }
-    else if (testCase.direction == "south"){
-      for (var i = 0; i < shipLengths[k]; i++){
-        shipLocations.push([randomRow + i, randomColumn]);
-      }
-    }
-    else if (testCase.direction == "west"){
-      for (var i = 0; i < shipLengths[k]; i++){
-        shipLocations.push([randomRow, randomColumn - i]);
-      }
-    }
-    else {
-      for (var i = 0; i < shipLengths[k]; i++){
-        shipLocations.push([randomRow, randomColumn + i]);
-      }
-    }
-    myShips.push(createShip(shipLocations, shipLengths[k]));
-    shipLocations = [];
-  }
-  myShips.forEach(function(ship, i){
-    ship.cellsOccupied.forEach(function(location){
-      myGrid.gridState[location[0]][location[1]] = "s";
-      document.getElementById(location[0] + "_" + location[1]).setAttribute("class", "ship");
-    });
-    ship.name = shipNames[i];
-    ship.health = shipLengths[i];
   });
 }
 
@@ -326,14 +281,18 @@ function createShip(shipLocation, shipLength){
   }
 }
 
-function isPlacementValid(anArray, shipLength){
+//
+function isPlacementValid(anArray, shipLength, shipArray){
+  var isNorthValid = true;
+  var isEastValid = true;
+  var isSouthValid = true;
+  var isWestValid = true;
   var validDirections = [];
   var row = anArray[0];
   var column = anArray[1];
   var length = shipLength;
   var locationsToCheck = [];
 
-  var isNorthValid = true;
   // check north direction
   // if there's not enough room to the north, set isNorthValid to false
   if (row < length - 1){
@@ -344,7 +303,7 @@ function isPlacementValid(anArray, shipLength){
     for (var i = 0; i < length; i++){
       locationsToCheck.push([row - i, column])
     }
-    ships.forEach(function(ship){
+    shipArray.forEach(function(ship){
       locationsToCheck.forEach(function(location){
         if (ship.contains(location)){
           isNorthValid = false;
@@ -354,19 +313,17 @@ function isPlacementValid(anArray, shipLength){
   }
   locationsToCheck = [];
 
-  var isEastValid = true;
   // check east direction
   // if there's not enough room to the east, set isEastValid to false
   if (column + length > 9){
     isEastValid = false;
   }
   else {
-
     // check gameState.gridState to see if we will overlap any ships
     for (var i = 0; i < length; i++){
       locationsToCheck.push([row, column + i])
     }
-    ships.forEach(function(ship){
+    shipArray.forEach(function(ship){
       locationsToCheck.forEach(function(location){
         if (ship.contains(location)){
           isEastValid = false;
@@ -376,7 +333,6 @@ function isPlacementValid(anArray, shipLength){
   }
   locationsToCheck = [];
 
-  var isSouthValid = true;
   // check south direction
   // if there's not enough room to the east, set isSouthValid to false
   if (row + length > 9){
@@ -387,7 +343,7 @@ function isPlacementValid(anArray, shipLength){
     for (var i = 0; i < length; i++){
       locationsToCheck.push([row + i, column])
     }
-    ships.forEach(function(ship){
+    shipArray.forEach(function(ship){
       locationsToCheck.forEach(function(location){
         if (ship.contains(location)){
           isSouthValid = false;
@@ -397,7 +353,6 @@ function isPlacementValid(anArray, shipLength){
   }
   locationsToCheck = [];
 
-  var isWestValid = true;
   // check west direction
   // if there's not enough room to the west, set isWestValid to false
   if (column < length - 1){
@@ -408,7 +363,7 @@ function isPlacementValid(anArray, shipLength){
     for (var i = 0; i < length; i++){
       locationsToCheck.push([row, column - i])
     }
-    ships.forEach(function(ship){
+    shipArray.forEach(function(ship){
       locationsToCheck.forEach(function(location){
         if (ship.contains(location)){
           isWestValid = false;
@@ -435,119 +390,12 @@ function isPlacementValid(anArray, shipLength){
   }
 }
 
-function isMyPlacementValid(anArray, shipLength){
-  var validDirections = [];
-  var row = anArray[0];
-  var column = anArray[1];
-  var length = shipLength;
-  var locationsToCheck = [];
-
-  var isNorthValid = true;
-  // check north direction
-  // if there's not enough room to the north, set isNorthValid to false
-  if (row < length - 1){
-    isNorthValid = false;
-  }
-  else {
-    // check gameState.gridState to see if we will overlap any ships
-    for (var i = 0; i < length; i++){
-      locationsToCheck.push([row - i, column])
-    }
-    myShips.forEach(function(ship){
-      locationsToCheck.forEach(function(location){
-        if (ship.contains(location)){
-          isNorthValid = false;
-        }
-      });
-    });
-  }
-  locationsToCheck = [];
-
-  var isEastValid = true;
-  // check east direction
-  // if there's not enough room to the east, set isEastValid to false
-  if (column + length > 9){
-    isEastValid = false;
-  }
-  else {
-
-    // check gameState.gridState to see if we will overlap any ships
-    for (var i = 0; i < length; i++){
-      locationsToCheck.push([row, column + i])
-    }
-    myShips.forEach(function(ship){
-      locationsToCheck.forEach(function(location){
-        if (ship.contains(location)){
-          isEastValid = false;
-        }
-      });
-    });
-  }
-  locationsToCheck = [];
-
-  var isSouthValid = true;
-  // check south direction
-  // if there's not enough room to the east, set isSouthValid to false
-  if (row + length > 9){
-    isSouthValid = false;
-  }
-  else {
-    // check gameState.gridState to see if we will overlap any ship
-    for (var i = 0; i < length; i++){
-      locationsToCheck.push([row + i, column])
-    }
-    myShips.forEach(function(ship){
-      locationsToCheck.forEach(function(location){
-        if (ship.contains(location)){
-          isSouthValid = false;
-        };
-      });
-    });
-  }
-  locationsToCheck = [];
-
-  var isWestValid = true;
-  // check west direction
-  // if there's not enough room to the west, set isWestValid to false
-  if (column < length - 1){
-    isWestValid = false;
-  }
-  else {
-    // check gameState.gridState to see if we will overlap any ships
-    for (var i = 0; i < length; i++){
-      locationsToCheck.push([row, column - i])
-    }
-    myShips.forEach(function(ship){
-      locationsToCheck.forEach(function(location){
-        if (ship.contains(location)){
-          isWestValid = false;
-        }
-      });
-    });
-  }
-
-  if (isNorthValid){
-    validDirections.push("north");
-  }
-  if (isEastValid){
-    validDirections.push("east");
-  }
-  if (isSouthValid){
-    validDirections.push("south");
-  }
-  if (isWestValid){
-    validDirections.push("west");
-  }
-  return {
-    valid: isNorthValid || isEastValid || isSouthValid || isWestValid,
-    direction: validDirections[Math.floor(Math.random() * validDirections.length)]
-  }
-}
-
+// method no longer in use
+// returns an array with 5 ship objects of length 1 (no duplicates allowed)
 function createSingleShips(){
   var numbers = []
   var shipNums = []
-  var ships = []
+  var targetShips = []
   var index
   for (var i = 0; i<100; i++){
     numbers.push(i)
@@ -558,14 +406,15 @@ function createSingleShips(){
     numbers.splice(index, 1);
   }
   for (var k = 0; k < 5; k++){
-    ships.push([Math.floor(shipNums[k] / 10), shipNums[k] % 10])
+    targetShips.push([Math.floor(shipNums[k] / 10), shipNums[k] % 10])
   }
   for (var l = 0; l < 5; l++){
-    gameState.gridState[ships[l][0]][ships[l][1]] = "s";
+    gameState.gridState[targetShips[l][0]][targetShips[l][1]] = "s";
   }
-  return ships;
+  return targetShips;
 }
 
+// gameState object manages the state of the top (target) grid
 var gameState = {
   gridState: createGridArray(),
   hits: 0,
@@ -584,6 +433,7 @@ var gameState = {
   }
 };
 
+// myGrid object manages the state of the bottom (player) grid
 var myGrid = {
   gridState: createGridArray(),
   shipLocations: [],
@@ -602,8 +452,9 @@ var myGrid = {
   }
 }
 
-function updateShipHealth(aLocation){
-  ships.forEach(function(ship){
+// checks to see if player has sunk a ship, called whenever player gets a hit
+function updateTargetShipHealth(aLocation){
+  targetShips.forEach(function(ship){
     if (ship.contains(aLocation)){
       ship.health--;
       if (ship.health < 1){
@@ -615,6 +466,8 @@ function updateShipHealth(aLocation){
   });
 }
 
+// checks to see if computer has sunk a ship, called whenever computer gets a hit
+// also resets the seeker object
 function updateMyShipHealth(aLocation){
   myShips.forEach(function(ship){
     if (ship.contains(aLocation)){
@@ -630,6 +483,9 @@ function updateMyShipHealth(aLocation){
   });
 }
 
+// handles all clicks in the target grid
+// updates state and DOM accordingly
+// calls computerShoots when finished
 function handleClick(cellLocation){
   if (gameState.gridState[cellLocation[0]][cellLocation[1]] == ""){
     gameState.gridState[cellLocation[0]][cellLocation[1]] = "m";
@@ -638,7 +494,7 @@ function handleClick(cellLocation){
   else if (gameState.gridState[cellLocation[0]][cellLocation[1]] == "s"){
     gameState.gridState[cellLocation[0]][cellLocation[1]] = "h";
     document.getElementById("message").innerHTML = "Hit!";
-    updateShipHealth([cellLocation[0], cellLocation[1]]);
+    updateTargetShipHealth([cellLocation[0], cellLocation[1]]);
     gameState.hits++;
   	audio.play();
   }
@@ -669,11 +525,9 @@ function shotAlreadyFired(aLocation){
   return false;
 }
 
-var ships = [];
-var myShips = [];
-var computerShots = [];
-var audio = document.getElementById("audio");
-
+// function not called, used for debugging. Returns an object with
+// the number of cells containing ships, and 'valid' is false if that
+// number is not 17 (5 + 4 + 3 + 3 + 2)
 function isBoardValid(board){
   var count = 0;
   for (var i = 0; i < 10; i++){
@@ -697,9 +551,6 @@ function isBoardValid(board){
   }
 }
 
-
-
-
 initGrids();
-createShips();
-createMyShips();
+createShips(targetShips, gameState);
+createShips(myShips, myGrid);

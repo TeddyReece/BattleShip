@@ -9,11 +9,16 @@ td{
   background-color: blue;
   color: white;
   text-align: center;
+  font-family: 'Lucida Console'; Monaco, monospace;
 }
 
 table{
   border-collapse: collapse;
   margin: auto;
+}
+
+li {
+  font-family: 'Lucida Console'; Monaco, monospace;
 }
 
 .ship {
@@ -24,12 +29,14 @@ table{
   text-align: center;
   color: white;
   background-color: black;
+  font-family: 'Lucida Console'; Monaco, monospace;
 }
 
-#myShipsHeader{
+#myShipsHeader, #targetShipsHeader{
   text-align: center;
   color: white;
   background-color: black;
+  font-family: 'Lucida Console'; Monaco, monospace;
 }
 
 .sunk {
